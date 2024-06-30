@@ -1,51 +1,60 @@
-% Inverter Circuit
+% Inverter Circuit Design and Simulation
 
+% Clear previous variables and figures
+clear;
+clc;
+close all;
 
-% Parameters
-Vdc = 12; % DC input voltage (V)
-R_load = 10; % Load resistance (Ohms)
-L = 1e-3; % Inductor (H)
-C = 100e-6; % Capacitor (F)
-f_sw = 50; % Output frequency (Hz)
-t = 0:1e-6:0.1; % Time vector
+% Define component values
+R = 1000;         % Resistance in ohms
+C = 1e-6;         % Capacitance in farads
 
-% Generate PWM signal
-f_pwm = 20e3; % PWM frequency (Hz)
-D = 0.5 * (1 + sin(2*pi*f_sw*t)); % Duty cycle
-PWM = square(2*pi*f_pwm*t, D*100);
+% Define the input signal
+Fs = 10000;       % Sampling frequency in Hz
+T = 1/Fs;         % Sampling period
+t = 0:T:0.01;     % Time vector (10 ms)
+Vin = 5 * square(2*pi*50*t);  % Input square wave (50 Hz)
 
-% Initialize variables
-Vout = zeros(size(t));
-IL = zeros(size(t)); % Inductor current
-VL = zeros(size(t)); % Inductor voltage
+% Transfer function of RC circuit
+s = tf('s');
+H = 1 / (1 + R*C*s);
 
-for k = 2:length(t)
-    if PWM(k) > 0
-        VL(k) = Vdc;
-    else
-        VL(k) = -Vout(k-1);
-    end
-    
-    IL(k) = IL(k-1) + (VL(k)/L) * (t(k)-t(k-1));
-    Vout(k) = Vout(k-1) + (IL(k)/C - Vout(k-1)/R_load) * (t(k)-t(k-1));
-end
+% Simulate the inverter response
+Vout = lsim(H, Vin, t);
 
-% Plot results
+% Plot the input and output signals
 figure;
-subplot(3,1,1);
-plot(t, PWM);
-title('PWM Signal');
-xlabel('Time (s)');
-ylabel('Amplitude');
-
-subplot(3,1,2);
-plot(t, Vout);
-title('Output Voltage');
+subplot(2,1,1);
+plot(t, Vin);
+title('Input Signal (Square Wave)');
 xlabel('Time (s)');
 ylabel('Voltage (V)');
+grid on;
 
-subplot(3,1,3);
-plot(t, IL);
-title('Inductor Current');
+subplot(2,1,2);
+plot(t, Vout);
+title('Inverter Output Signal');
 xlabel('Time (s)');
-ylabel('Current (A)');
+ylabel('Voltage (V)');
+grid on;
+
+% Inversion process: Ideally, for an inverter, Vout = Vcc - Vin.
+% Simulate an ideal inverter
+Vcc = 5;  % Supply voltage
+Vout_ideal = Vcc - Vin;
+
+% Plot the ideal inverter output
+figure;
+subplot(2,1,1);
+plot(t, Vin);
+title('Input Signal (Square Wave)');
+xlabel('Time (s)');
+ylabel('Voltage (V)');
+grid on;
+
+subplot(2,1,2);
+plot(t, Vout_ideal);
+title('Ideal Inverter Output Signal');
+xlabel('Time (s)');
+ylabel('Voltage (V)');
+grid on;
